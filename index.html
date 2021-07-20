@@ -1,0 +1,156 @@
+<html>
+
+<head>
+<title>DAM</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo=">
+<style>
+td {
+  color: #fff;
+  padding: 20px;
+  cursor: pointer;
+}
+
+td:hover {
+  opacity: 0.9;
+}
+
+.on {
+  background: red;
+}
+
+.off {
+  background: grey;
+}
+
+.mode {
+  padding: 4px;
+}
+</style>
+</head>
+
+<body>
+  <div class="mode">
+    Mode:
+    <select id="mode">
+      <option value="">None</option>
+      <option value="OpenClose" selected>OpenClose</option>
+      <option value="CloseOpen">CloseOpen</option>
+    </select>
+  </div>
+  <div id="content"></div>
+<script>
+function fetch (method, params, callback, errCallback) {
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == XMLHttpRequest.DONE) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (xhr.status === 200) {
+          callback(data);
+        } else {
+          errCallback(data);
+        }
+      } catch (e) {
+        errCallback(e);
+      }
+    }
+  };
+  xhr.onerror = function (e) {
+    errCallback(e);
+  };
+  xhr.open('POST', '/', true);
+  var data = { method: method, params: [] };
+  if (params) {
+    data.params.push(params);
+  }
+  xhr.send(JSON.stringify(data));
+}
+
+function showError (err) {
+  if (window.console) console.error(err);
+  var msg = 'Unknown error';
+  if (err && err.error) {
+    msg = err.error;
+  } else if (err) {
+    msg = JSON.stringify(err);
+  }
+  var content = document.getElementById('content');
+  content.innerText = msg;
+}
+
+function newCommand (command, address, n) {
+  return function () {
+    var mode = document.getElementById('mode').value;
+    if (mode) {
+      fetch('DAM.' + mode, { Address: address, Number: n }, function (res) {
+        var tds = document.getElementsByTagName('td');
+        for (var i = 0; i < tds.length; i++) {
+          if (tds[i].dataset.number === String(n)) {
+            if (mode === 'OpenClose') {
+              tds[i].setAttribute('class', 'on')
+            } else if (mode === 'CloseOpen') {
+              tds[i].setAttribute('class', 'off')
+            }
+          }
+        }
+        setTimeout(function () {
+          getStatuses(address);
+        }, 1500);
+      }, showError);
+      return;
+    }
+    fetch('DAM.' + command, { Address: address, Number: n }, function (res) {
+      getStatuses(address);
+    }, showError);
+  }
+}
+
+function newClose (address, n) {
+  return newCommand('Close', address, n);
+}
+
+function newOpen (address, n) {
+  return newCommand('Open', address, n);
+}
+
+function getStatuses (address) {
+  fetch('DAM.GetStatuses', { Address: address }, function (res) {
+    var results = res.result;
+    var html = '<table><tbody>';
+    for (var i = 0; i < results.length; i++) {
+      if (i % 8 === 0) html += '<tr>';
+      var klass = results[i].On ? 'on' : 'off';
+      var n = results[i].Number;
+      html += '<td class="' + klass + '" data-number="' + n + '">#' + pad0(n) + '</td>';
+      if (i % 8 === 7) html += '</tr>';
+    }
+    html += '</tbody></table>';
+    var content = document.getElementById('content');
+    content.innerHTML = html;
+    var ons = content.getElementsByClassName('on');
+    for (var i = 0; i < ons.length; i++) {
+      var num = parseInt(ons[i].dataset.number);
+      ons[i].onclick = newClose(address, num);
+    }
+    var offs = content.getElementsByClassName('off');
+    for (var i = 0; i < offs.length; i++) {
+      var num = parseInt(offs[i].dataset.number);
+      offs[i].onclick = newOpen(address, num);
+    }
+  }, showError);
+}
+
+function pad0 (n) {
+  return n < 10 ? '0' + n : n;
+}
+
+(function () {
+  fetch('DAM.GetAddress', null, function (res) {
+    var address = res.result;
+    getStatuses(address);
+  }, showError);
+})();
+</script>
+</body>
+
+</html>
