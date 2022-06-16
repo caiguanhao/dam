@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	address := flag.String("address", "127.0.0.1:15161", "listen address")
+	address := flag.String("l", "127.0.0.1:15161", "listen address")
 	port := flag.String("p", "", "serial port")
 	flag.Parse()
 

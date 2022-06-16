@@ -61,7 +61,7 @@ func (d *DAM) GetAddress(args *BasicArgs, reply *int) error {
 }
 
 func (d *DAM) GetStatuses(args *AddressArgs, reply *[]Status) error {
-	channelKey, bytes := build(byte(args.Address), 1, 0, 16)
+	channelKey, bytes := build(254, 1, 0, 16)
 	ret, err := d.write(args.ClientId, channelKey, bytes)
 	if err != nil {
 		return err
@@ -78,28 +78,28 @@ func (d *DAM) GetStatuses(args *AddressArgs, reply *[]Status) error {
 }
 
 func (d *DAM) OpenAll(args *AddressArgs, reply *bool) (err error) {
-	channelKey, bytes := build(byte(args.Address), 0x0F, 0, 16, 0xFF, 0xFF)
+	channelKey, bytes := build(254, 0x0F, 0, 16, 0xFF, 0xFF)
 	_, err = d.write(args.ClientId, channelKey, bytes)
 	*reply = err == nil
 	return err
 }
 
 func (d *DAM) CloseAll(args *AddressArgs, reply *bool) (err error) {
-	channelKey, bytes := build(byte(args.Address), 0x0F, 0, 16, 0x00, 0x00)
+	channelKey, bytes := build(254, 0x0F, 0, 16, 0x00, 0x00)
 	_, err = d.write(args.ClientId, channelKey, bytes)
 	*reply = err == nil
 	return err
 }
 
 func (d *DAM) Open(args *NumberArgs, reply *bool) (err error) {
-	channelKey, bytes := build(byte(args.Address), 0x05, args.Number-1, 65280)
+	channelKey, bytes := build(254, 0x05, args.Number-1, 65280)
 	_, err = d.write(args.ClientId, channelKey, bytes)
 	*reply = err == nil
 	return err
 }
 
 func (d *DAM) Close(args *NumberArgs, reply *bool) (err error) {
-	channelKey, bytes := build(byte(args.Address), 0x05, args.Number-1, 0)
+	channelKey, bytes := build(254, 0x05, args.Number-1, 0)
 	_, err = d.write(args.ClientId, channelKey, bytes)
 	*reply = err == nil
 	return err
@@ -111,7 +111,7 @@ func (d *DAM) OpenClose(args *OpenCloseArgs, reply *bool) (err error) {
 	if ds < 1 {
 		ds = 10
 	}
-	channelKey, bytes := build(byte(args.Address), 0x10, addr, 2, 0, 4, byte(ds>>8), byte(ds))
+	channelKey, bytes := build(254, 0x10, addr, 2, 0, 4, byte(ds>>8), byte(ds))
 	_, err = d.write(args.ClientId, channelKey, bytes)
 	*reply = err == nil
 	return err
@@ -123,7 +123,7 @@ func (d *DAM) CloseOpen(args *OpenCloseArgs, reply *bool) (err error) {
 	if ds < 1 {
 		ds = 10
 	}
-	channelKey, bytes := build(byte(args.Address), 0x10, addr, 2, 0, 2, byte(ds>>8), byte(ds))
+	channelKey, bytes := build(254, 0x10, addr, 2, 0, 2, byte(ds>>8), byte(ds))
 	_, err = d.write(args.ClientId, channelKey, bytes)
 	*reply = err == nil
 	return err
