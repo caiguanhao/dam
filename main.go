@@ -2,13 +2,20 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 )
 
+var version string
+
 func main() {
 	address := flag.String("l", "127.0.0.1:15161", "listen address")
 	port := flag.String("p", "", "serial port")
+	flag.Usage = func() {
+		fmt.Fprintln(flag.CommandLine.Output(), "DAM, version", version)
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	openPort(*port)
