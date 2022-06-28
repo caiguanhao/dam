@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/rpc"
 	"sync"
+	"time"
 
 	"go.bug.st/serial"
 )
@@ -40,29 +41,39 @@ func (port Port) read() {
 	}
 }
 
-func openPort(name string) {
-	p, err := serial.Open(name, &serial.Mode{
-		BaudRate: 9600,
-	})
-	if err != nil {
-		log.Println("open:", err)
-		return
-	}
-	var clients sync.Map
-	var channels sync.Map
-	port := &Port{
-		Port: p,
-		jsonrpc: &DAM{
-			Clients: &clients,
-		},
-		channels: &channels,
-	}
+var clients sync.Map
+var channels sync.Map
+var port = &Port{
+	jsonrpc: &DAM{
+		Clients: &clients,
+	},
+	channels: &channels,
+}
+
+func init() {
 	clients.Store("", port)
-	go port.read()
-	err = rpc.RegisterName("DAM", port.jsonrpc)
+	err := rpc.RegisterName("DAM", port.jsonrpc)
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func openPort(name string) {
+	for {
+		p, err := serial.Open(name, &serial.Mode{
+			BaudRate: 9600,
+		})
+		if err == nil {
+			port.Port = p
+			break
+		}
+		log.Println("open:", err)
+		time.Sleep(2 * time.Second)
+	}
+	go func() {
+		port.read()
+		openPort(name)
+	}()
 	var i int
 	if port.jsonrpc.GetAddress(&BasicArgs{}, &i) == nil {
 		log.Println("successfully opened", name)
