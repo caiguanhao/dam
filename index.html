@@ -36,6 +36,8 @@ td:hover {
       <option value="OpenClose" selected>OpenClose</option>
       <option value="CloseOpen">CloseOpen</option>
     </select>
+    <button onclick="execute('DAM.OpenAll', reload)">OpenAll</button>
+    <button onclick="execute('DAM.CloseAll', reload)">CloseAll</button>
   </div>
   <div id="content"></div>
 <script>
@@ -105,6 +107,17 @@ function newCommand (command, address, n) {
   }
 }
 
+function execute (command, cb) {
+  fetch(command, null, cb, showError);
+}
+
+function reload () {
+  execute('DAM.GetAddress', function (res) {
+    var address = res.result;
+    getStatuses(address);
+  })
+}
+
 function newClose (address, n) {
   return newCommand('Close', address, n);
 }
@@ -145,10 +158,7 @@ function pad0 (n) {
 }
 
 (function () {
-  fetch('DAM.GetAddress', null, function (res) {
-    var address = res.result;
-    getStatuses(address);
-  }, showError);
+  reload()
 })();
 </script>
 </body>
